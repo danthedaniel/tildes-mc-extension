@@ -135,6 +135,20 @@ async function onClick(event) {
   window.open(link.href, "_blank");
 }
 
+const worldIcons = {
+  world: "\u{1F30E}", // Globe with Americas
+  world_nether: "\u{1F525}", // Fire
+  world_the_end: "\u{1F30C}", // Milky Way
+  [bogusWorld]: "\u{1F310}", // Globe with meridians
+};
+
+const worldNames = {
+  world: "Overworld",
+  world_nether: "Nether",
+  world_the_end: "End",
+  [bogusWorld]: "Unknown",
+};
+
 /**
  * Refreshes the online indicator for a user.
  * @param {HTMLAnchorElement} link
@@ -171,13 +185,8 @@ function refreshOnlineIndicator(link, onlineUser) {
   circle.setAttribute("target", "_blank");
   circle.setAttribute("rel", "noopener noreferrer");
   circle.classList.add("online");
-  if (onlineUser.world === bogusWorld) {
-    circle.textContent = "\u{1F310}"; // Globe with meridians
-    circle.title = "Online in unknown world";
-  } else {
-    circle.textContent = "\u{1F30E}"; // Globe with Americas
-    circle.title = "Online";
-  }
+  circle.textContent = worldIcons[onlineUser.world] || worldIcons[bogusWorld];
+  circle.title = `Online - ${worldNames[onlineUser.world] || worldNames[bogusWorld]}`;
   circle.addEventListener("click", onClick);
 }
 

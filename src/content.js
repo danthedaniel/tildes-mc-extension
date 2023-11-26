@@ -64,10 +64,21 @@ async function getAllWorlds() {
 }
 
 async function addOnlineIndicators() {
-  const tildesUsers = await getAllWorlds();
+  // Give everyone an offline indicator to start
+  for (const link of document.querySelectorAll("a.link-user")) {
+    const circle = document.createElement("a");
+    circle.classList.add("mc-online-indicator");
+    circle.classList.add("offline");
+    circle.setAttribute("href", "#");
+    circle.title = "Offline";
+    circle.textContent = "\u200B"; // Zero-width space
+    link.after(circle);
+  }
+
+  const onlineUsers = await getAllWorlds();
   
   for (const link of document.querySelectorAll("a.link-user")) {
-    const onlineUser = tildesUsers.find(user => user.name === link.textContent);
+    const onlineUser = onlineUsers.find(user => user.name === link.textContent);
     if (!onlineUser) {
       continue;
     }
@@ -82,10 +93,12 @@ async function addOnlineIndicators() {
       url.searchParams.append("z", onlineUser.z.toString());
     }
     
-    const circle = document.createElement("a");
+    const circle = link.nextElementSibling;
+    circle.classList.remove("offline");
     circle.setAttribute("href", url.toString());
     circle.setAttribute("target", "_blank");
-    circle.classList.add("mc-online-indicator");
+    circle.setAttribute("rel", "noopener noreferrer");
+    circle.classList.add("online");
     if (onlineUser.world === bogusWorld) {
       circle.textContent = "\u{1F310}"; // Globe with meridians
       circle.title = "Online in unknown world";
@@ -93,9 +106,6 @@ async function addOnlineIndicators() {
       circle.textContent = "\u{1F30E}"; // Globe with Americas
       circle.title = "Online";
     }
-
-    // Put circle after the link tag
-    link.after(circle);
   }
 }
 

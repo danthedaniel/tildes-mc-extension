@@ -30,13 +30,16 @@ async function getAllWorlds() {
   /** @type {Record<string, Pick<Player, "name" | "world" | "x" | "y" | "z">>} */
   const users = {};
 
-  for (const world of worlds) {
+  const timestamp = Date.now();
+  const promises = worlds.map(world => {
     const url = new URL("https://tildes.nore.gg/standalone/MySQL_update.php");
     url.searchParams.append("world", world);
-    url.searchParams.append("ts", Date.now());
+    url.searchParams.append("ts", timestamp);
 
-    const response = await fetch(url);
+    return fetch(url);
+  });
 
+  for (const response of await Promise.all(promises)) {
     /** @type {UpdateResponse} */
     const data = await response.json();
     const tildesUsers =

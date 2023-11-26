@@ -1,0 +1,17 @@
+{
+  "manifest_version": 2,
+  "name": "Tildes Username Modifier",
+  "version": "1.0",
+  "description": "Appends DynMap links to usernames on tildes.net",
+  "permissions": [
+    "https://tildes.net/*",
+    "https://tildes.nore.gg/standalone/MySQL_update.php"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://tildes.net/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ]
+}

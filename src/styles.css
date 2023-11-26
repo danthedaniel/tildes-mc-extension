@@ -1,0 +1,19 @@
+.mc-online-indicator {
+  display: inline-block;
+  margin-left: 18px;
+  position: relative;
+  text-decoration: none;
+}
+
+.mc-online-indicator::before {
+  content: '';
+  display: block;
+  position: absolute;
+  left: -13px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  background-color: green;
+  border-radius: 50%;
+}

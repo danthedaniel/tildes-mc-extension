@@ -63,7 +63,7 @@ async function getAllWorlds() {
   return Object.values(users);
 }
 
-async function fetchUsernames() {
+async function addOnlineIndicators() {
   const tildesUsers = await getAllWorlds();
   
   for (const link of document.querySelectorAll("a.link-user")) {
@@ -99,4 +99,4 @@ async function fetchUsernames() {
   }
 }
 
-fetchUsernames();
+addOnlineIndicators();

@@ -1,8 +1,11 @@
 {
   "manifest_version": 2,
-  "name": "Tildes Username Modifier",
+  "name": "Tildes MC Status Indicators",
   "version": "1.0",
   "description": "Appends DynMap links to usernames on tildes.net",
+  "icons": {
+    "32": "icons/icon32.png"
+  },
   "permissions": [
     "https://tildes.net/*",
     "https://tildes.nore.gg/standalone/MySQL_update.php"

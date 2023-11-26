@@ -76,7 +76,7 @@ async function addOnlineIndicators() {
     if (onlineUser.world !== bogusWorld) {
       url.searchParams.append("worldname", onlineUser.world);
       url.searchParams.append("mapname", onlineUser.world === "world" ? "surface" : "flat");
-      url.searchParams.append("zoom", "3");
+      url.searchParams.append("zoom", "6");
       url.searchParams.append("x", onlineUser.x.toString());
       url.searchParams.append("y", "64");
       url.searchParams.append("z", onlineUser.z.toString());

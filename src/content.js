@@ -66,7 +66,7 @@ async function getAllWorlds() {
   return Object.values(users);
 }
 
-async function addOnlineIndicators() {
+function addPlaceholders() {
   // Give everyone an offline indicator to start
   for (const link of document.querySelectorAll("a.link-user")) {
     const circle = document.createElement("a");
@@ -77,12 +77,21 @@ async function addOnlineIndicators() {
     circle.textContent = "\u200B"; // Zero-width space
     link.after(circle);
   }
+}
 
+async function refreshOnlineIndicators() {
   const onlineUsers = await getAllWorlds();
   
   for (const link of document.querySelectorAll("a.link-user")) {
+    const circle = link.nextElementSibling;
+
     const onlineUser = onlineUsers.find(user => user.name === link.textContent);
     if (!onlineUser) {
+      circle.classList.remove("online");
+      circle.classList.add("offline");
+      circle.textContent = "\u200B"; // Zero-width space
+      circle.title = "Offline";
+      circle.setAttribute("href", "#");
       continue;
     }
 
@@ -96,7 +105,6 @@ async function addOnlineIndicators() {
       url.searchParams.append("z", onlineUser.z.toString());
     }
     
-    const circle = link.nextElementSibling;
     circle.classList.remove("offline");
     circle.setAttribute("href", url.toString());
     circle.setAttribute("target", "_blank");
@@ -110,6 +118,20 @@ async function addOnlineIndicators() {
       circle.title = "Online";
     }
   }
+}
+
+async function addOnlineIndicators() {
+  addPlaceholders();
+
+  await refreshOnlineIndicators();
+
+  setInterval(async () => {
+    try {
+      refreshOnlineIndicators();
+    } catch (e) {
+      console.error(e);
+    }
+  }, 1000 * 30);
 }
 
 addOnlineIndicators();

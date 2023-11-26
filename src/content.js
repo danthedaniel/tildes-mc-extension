@@ -185,7 +185,7 @@ async function refreshOnlineIndicators() {
   const onlineUsers = await getAllWorlds();
   
   for (const link of document.querySelectorAll("a.link-user")) {
-    const onlineUser = onlineUsers.find(user => user.name === link.textContent);
+    const onlineUser = onlineUsers.find(user => user.name === link.textContent.replace(/^@/, ""));
 
     refreshOnlineIndicator(link, onlineUser);
   }

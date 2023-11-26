@@ -25,18 +25,40 @@
 
 const bogusWorld = "-some-other-bogus-world-";
 
+/**
+ * @param {number} timestamp
+ */
+function setLastFetchedAt(timestamp) {
+  sessionStorage.setItem("lastFetchedAt", timestamp.toString());
+}
+
+/**
+ * @returns {number}
+ */
+function getLastFetchedAt() {
+  const timestamp = parseInt(sessionStorage.getItem("lastFetchedAt"), 10);
+  if (isNaN(timestamp)) {
+    return 0;
+  }
+
+  return timestamp;
+}
+
+/**
+ * Gets all players in all worlds.
+ */
 async function getAllWorlds() {
+  const timestamp = Date.now();
   const worlds = ["world", "world_nether", "world_the_end"];
   /** @type {Record<string, Pick<Player, "name" | "world" | "x" | "y" | "z">>} */
   const users = {};
 
-  const timestamp = Date.now();
   const promises = worlds.map(world => {
     const url = new URL("https://tildes.nore.gg/standalone/MySQL_update.php");
     url.searchParams.append("world", world);
     url.searchParams.append("ts", timestamp);
 
-    return fetch(url);
+    return fetch(url, { timeout: 5 * 1000 });
   });
 
   for (const response of await Promise.all(promises)) {
@@ -63,6 +85,8 @@ async function getAllWorlds() {
     }
   }
 
+  setLastFetchedAt(timestamp);
+
   return Object.values(users);
 }
 
@@ -79,44 +103,91 @@ function addPlaceholders() {
   }
 }
 
+/**
+ * OnClick handler for online indicators.
+ * @param {MouseEvent} event
+ */
+async function onClick(event) {
+  const linkExpired = (Date.now() - getLastFetchedAt()) > 1000 * 5;
+  if (!linkExpired) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  /** @type {HTMLAnchorElement} */
+  const link = event.target;
+  link.classList.add("loading");
+
+  try {
+    await refreshOnlineIndicators();
+  } catch (/** @type {unknown} */ e) {
+    console.error(e);
+  } finally {
+    link.classList.remove("loading");
+  }
+
+  if (link.href === "#") {
+    return;
+  }
+
+  window.open(link.href, "_blank");
+}
+
+/**
+ * Refreshes the online indicator for a user.
+ * @param {HTMLAnchorElement} link
+ * @param {Pick<Player, "name" | "world" | "x" | "y" | "z"> | undefined} onlineUser
+ */
+function refreshOnlineIndicator(link, onlineUser) {
+  const circle = link.nextElementSibling;
+  if (!circle || !circle.classList.contains("mc-online-indicator")) {
+    return;
+  }
+
+  if (!onlineUser) {
+    circle.classList.remove("online");
+    circle.classList.add("offline");
+    circle.textContent = "\u200B"; // Zero-width space
+    circle.title = "Offline";
+    circle.setAttribute("href", "#");
+    circle.removeEventListener("click", onClick);
+    return;
+  }
+
+  const url = new URL("https://tildes.nore.gg/");
+  if (onlineUser.world !== bogusWorld) {
+    url.searchParams.append("worldname", onlineUser.world);
+    url.searchParams.append("mapname", onlineUser.world === "world" ? "surface" : "flat");
+    url.searchParams.append("zoom", "6");
+    url.searchParams.append("x", onlineUser.x.toString());
+    url.searchParams.append("y", "64");
+    url.searchParams.append("z", onlineUser.z.toString());
+  }
+  
+  circle.classList.remove("offline");
+  circle.setAttribute("href", url.toString());
+  circle.setAttribute("target", "_blank");
+  circle.setAttribute("rel", "noopener noreferrer");
+  circle.classList.add("online");
+  if (onlineUser.world === bogusWorld) {
+    circle.textContent = "\u{1F310}"; // Globe with meridians
+    circle.title = "Online in unknown world";
+  } else {
+    circle.textContent = "\u{1F30E}"; // Globe with Americas
+    circle.title = "Online";
+  }
+  circle.addEventListener("click", onClick);
+}
+
 async function refreshOnlineIndicators() {
   const onlineUsers = await getAllWorlds();
   
   for (const link of document.querySelectorAll("a.link-user")) {
-    const circle = link.nextElementSibling;
-
     const onlineUser = onlineUsers.find(user => user.name === link.textContent);
-    if (!onlineUser) {
-      circle.classList.remove("online");
-      circle.classList.add("offline");
-      circle.textContent = "\u200B"; // Zero-width space
-      circle.title = "Offline";
-      circle.setAttribute("href", "#");
-      continue;
-    }
 
-    const url = new URL("https://tildes.nore.gg/");
-    if (onlineUser.world !== bogusWorld) {
-      url.searchParams.append("worldname", onlineUser.world);
-      url.searchParams.append("mapname", onlineUser.world === "world" ? "surface" : "flat");
-      url.searchParams.append("zoom", "3");
-      url.searchParams.append("x", onlineUser.x.toString());
-      url.searchParams.append("y", "64");
-      url.searchParams.append("z", onlineUser.z.toString());
-    }
-    
-    circle.classList.remove("offline");
-    circle.setAttribute("href", url.toString());
-    circle.setAttribute("target", "_blank");
-    circle.setAttribute("rel", "noopener noreferrer");
-    circle.classList.add("online");
-    if (onlineUser.world === bogusWorld) {
-      circle.textContent = "\u{1F310}"; // Globe with meridians
-      circle.title = "Online in unknown world";
-    } else {
-      circle.textContent = "\u{1F30E}"; // Globe with Americas
-      circle.title = "Online";
-    }
+    refreshOnlineIndicator(link, onlineUser);
   }
 }
 
@@ -127,11 +198,11 @@ async function addOnlineIndicators() {
 
   setInterval(async () => {
     try {
-      refreshOnlineIndicators();
-    } catch (e) {
+      await refreshOnlineIndicators();
+    } catch (/** @type {unknown} */ e) {
       console.error(e);
     }
-  }, 1000 * 30);
+  }, 1000 * 60);
 }
 
 addOnlineIndicators();

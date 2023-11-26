@@ -5,6 +5,10 @@
   text-decoration: none;
 }
 
+.mc-online-indicator.loading {
+  cursor: wait;
+}
+
 .mc-online-indicator.online::before {
   content: '';
   display: block;

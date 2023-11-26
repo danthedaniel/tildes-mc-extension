@@ -87,10 +87,10 @@ async function addOnlineIndicators() {
     circle.setAttribute("target", "_blank");
     circle.classList.add("mc-online-indicator");
     if (onlineUser.world === bogusWorld) {
-      circle.textContent = "🌐";
+      circle.textContent = "\u{1F310}"; // Globe with meridians
       circle.title = "Online in unknown world";
     } else {
-      circle.textContent = "🌎";
+      circle.textContent = "\u{1F30E}"; // Globe with Americas
       circle.title = "Online";
     }
 

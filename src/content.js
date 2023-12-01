@@ -1,26 +1,22 @@
 /**
- * @typedef {Object} Player
+ * @typedef {Object} PlayerData
  * @property {string} world
- * @property {number} armor
  * @property {string} name
  * @property {number} x
  * @property {number} y
  * @property {number} z
- * @property {number} health
- * @property {number} sort
- * @property {string} type
- * @property {string} account
  */
 
 /**
- * @typedef {Object} UpdateResponse
- * @property {number} currentcount
- * @property {boolean} hasStorm
- * @property {Player[]} players
- * @property {boolean} isThundering
- * @property {number} confighash
- * @property {number} servertime
- * @property {number} timestamp
+ * @typedef {Object} Player
+ * @property {string} name
+ * @property {boolean} online
+ * @property {PlayerData} data
+ */
+
+/**
+ * @typedef {Object} StatusResponse
+ * @property {Player[]} statuses
  */
 
 const bogusWorld = "-some-other-bogus-world-";
@@ -46,48 +42,24 @@ function getLastFetchedAt() {
 
 /**
  * Gets all players in all worlds.
+ * @param {string[]} usernames
  */
-async function getAllWorlds() {
+async function getStatuses(usernames) {
   const timestamp = Date.now();
-  const worlds = ["world", "world_nether", "world_the_end"];
-  /** @type {Record<string, Pick<Player, "name" | "world" | "x" | "y" | "z">>} */
-  const users = {};
-
-  const promises = worlds.map(world => {
-    const url = new URL("https://tildes.nore.gg/standalone/MySQL_update.php");
-    url.searchParams.append("world", world);
-    url.searchParams.append("ts", timestamp);
-
-    return fetch(url, { timeout: 5 * 1000 });
-  });
-
-  for (const response of await Promise.all(promises)) {
-    /** @type {UpdateResponse} */
-    const data = await response.json();
-    const tildesUsers =
-        data
-            .players
-            .filter(player => player.name.startsWith("<span style=\"color:#0099cc\">"))
-            .map(player => ({
-              name: player.name.match(/<span style="color:#0099cc">(.*)<\/span>/)[1],
-              world: player.world,
-              x: player.x,
-              y: player.y,
-              z: player.z,
-            }));
-    
-    for (const user of tildesUsers) {
-      if (users[user.name] && user.world === bogusWorld) {
-        continue;
-      }
-
-      users[user.name] = user;
-    }
-  }
+  
+  /** @type {StatusResponse} */
+  const response = await fetch("https://tildes.nore.gg/status", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+    },
+    body: JSON.stringify({ usernames }),
+  }).then(res => res.json());
 
   setLastFetchedAt(timestamp);
 
-  return Object.values(users);
+  return response.statuses;
 }
 
 function addPlaceholders() {
@@ -152,12 +124,14 @@ const worldNames = {
 /**
  * Refreshes the online indicator for a user.
  * @param {HTMLAnchorElement} link
- * @param {Pick<Player, "name" | "world" | "x" | "y" | "z"> | undefined} onlineUser
+ * @param {Player} onlineUser
  */
 function refreshOnlineIndicator(link, onlineUser) {
-  const circle = link.nextElementSibling;
+  let circle = link.nextElementSibling;
   if (!circle || !circle.classList.contains("mc-online-indicator")) {
-    return;
+    circle = document.createElement("a");
+    circle.classList.add("mc-online-indicator");
+    link.after(circle);
   }
 
   if (!onlineUser) {
@@ -191,10 +165,18 @@ function refreshOnlineIndicator(link, onlineUser) {
 }
 
 async function refreshOnlineIndicators() {
-  const onlineUsers = await getAllWorlds();
+  const userLinks = Array.from(document.querySelectorAll("a.link-user"));
+  const usernames = userLinks.map(link => link.textContent.replace(/^@/, ""));
+  const usernamesDeduped = Array.from(new Set(usernames));
+  const onlineUsers = await getStatuses(usernamesDeduped);
+
+  console.log(onlineUsers);
   
-  for (const link of document.querySelectorAll("a.link-user")) {
-    const onlineUser = onlineUsers.find(user => user.name === link.textContent.replace(/^@/, ""));
+  for (const onlineUser of onlineUsers) {
+    const link = userLinks.find(link => link.textContent.replace(/^@/, "") === onlineUser.name);
+    if (!link) {
+      continue;
+    }
 
     refreshOnlineIndicator(link, onlineUser);
   }

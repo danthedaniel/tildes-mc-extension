@@ -1,10 +1,12 @@
 {
   "manifest_version": 2,
   "name": "Tildes MC Status Indicators",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Appends DynMap links to usernames on tildes.net",
   "icons": {
-    "32": "icons/icon32.png"
+    "32": "icons/icon32.png",
+    "64": "icons/icon64.png",
+    "300": "icons/icon300.png"
   },
   "permissions": [
     "https://tildes.net/*",
@@ -12,9 +14,15 @@
   ],
   "content_scripts": [
     {
-      "matches": ["https://tildes.net/*"],
-      "js": ["content.js"],
-      "css": ["styles.css"]
+      "matches": [
+        "https://tildes.net/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ]
     }
   ]
 }

@@ -1,6 +1,11 @@
+.comment-header a.link-user,
+.topic-full-byline a.link-user,
+.topic-info a.link-user {
+  margin-right: 18px;
+}
+
 .mc-online-indicator {
   display: inline-block;
-  margin-left: 18px;
   position: relative;
   text-decoration: none;
 }
@@ -24,15 +29,7 @@
 
 .mc-online-indicator.offline::before {
   content: '';
-  display: block;
-  position: absolute;
+  display: none;
   pointer-events: none;
   cursor: default;
-  left: -13px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 8px;
-  height: 8px;
-  background-color: gray;
-  border-radius: 50%;
 }

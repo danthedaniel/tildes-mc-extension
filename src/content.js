@@ -1,3 +1,5 @@
+// @ts-check
+
 /**
  * @typedef {Object} Player
  * @property {string} world
@@ -36,7 +38,7 @@ function setLastFetchedAt(timestamp) {
  * @returns {number}
  */
 function getLastFetchedAt() {
-  const timestamp = parseInt(sessionStorage.getItem("lastFetchedAt"), 10);
+  const timestamp = parseInt(sessionStorage.getItem("lastFetchedAt") ?? "0", 10);
   if (isNaN(timestamp)) {
     return 0;
   }
@@ -56,9 +58,12 @@ async function getAllWorlds() {
   const promises = worlds.map(world => {
     const url = new URL("https://tildes.nore.gg/standalone/MySQL_update.php");
     url.searchParams.append("world", world);
-    url.searchParams.append("ts", timestamp);
+    url.searchParams.append("ts", timestamp.toString());
 
-    return fetch(url, { timeout: 5 * 1000 });
+    return Promise.race([
+      fetch(url),
+      new Promise((_, reject) => setTimeout(reject, 1000 * 5)),
+    ]);
   });
 
   for (const response of await Promise.all(promises)) {
@@ -69,7 +74,7 @@ async function getAllWorlds() {
             .players
             .filter(player => player.name.startsWith("<span style=\"color:#0099cc\">"))
             .map(player => ({
-              name: player.name.match(/<span style="color:#0099cc">(.*)<\/span>/)[1],
+              name: player.name?.match(/<span style="color:#0099cc">(.*)<\/span>/)?.[1] ?? "-bogus-user-",
               world: player.world,
               x: player.x,
               y: player.y,
@@ -96,16 +101,13 @@ function addPlaceholders() {
     const circle = document.createElement("a");
     circle.classList.add("mc-online-indicator");
     circle.classList.add("offline");
-    circle.setAttribute("href", "#");
-    circle.title = "Offline";
-    circle.textContent = "\u200B"; // Zero-width space
     link.after(circle);
   }
 }
 
 /**
  * OnClick handler for online indicators.
- * @param {MouseEvent} event
+ * @param {Event} event
  */
 async function onClick(event) {
   const linkExpired = (Date.now() - getLastFetchedAt()) > 1000 * 5;
@@ -116,8 +118,11 @@ async function onClick(event) {
   event.preventDefault();
   event.stopPropagation();
 
-  /** @type {HTMLAnchorElement} */
   const link = event.target;
+  if (!(link instanceof HTMLAnchorElement)) {
+    return;
+  }
+
   link.classList.add("loading");
 
   try {
@@ -163,9 +168,6 @@ function refreshOnlineIndicator(link, onlineUser) {
   if (!onlineUser) {
     circle.classList.remove("online");
     circle.classList.add("offline");
-    circle.textContent = "\u200B"; // Zero-width space
-    circle.title = "Offline";
-    circle.setAttribute("href", "#");
     circle.removeEventListener("click", onClick);
     return;
   }
@@ -186,15 +188,25 @@ function refreshOnlineIndicator(link, onlineUser) {
   circle.setAttribute("rel", "noopener noreferrer");
   circle.classList.add("online");
   circle.textContent = worldIcons[onlineUser.world] || worldIcons[bogusWorld];
-  circle.title = `Online - ${worldNames[onlineUser.world] || worldNames[bogusWorld]}`;
+  circle.setAttribute("title", `Online - ${worldNames[onlineUser.world] || worldNames[bogusWorld]}`);
   circle.addEventListener("click", onClick);
 }
 
 async function refreshOnlineIndicators() {
   const onlineUsers = await getAllWorlds();
+
+  const selectors = [
+    ".comment-header a.link-user",
+    ".topic-full-byline a.link-user",
+    ".topic-info a.link-user",
+  ];
   
-  for (const link of document.querySelectorAll("a.link-user")) {
-    const onlineUser = onlineUsers.find(user => user.name === link.textContent.replace(/^@/, ""));
+  for (const link of document.querySelectorAll(selectors.join(", "))) {
+    if (!(link instanceof HTMLAnchorElement)) {
+      continue;
+    }
+
+    const onlineUser = onlineUsers.find(user => user.name === link.textContent?.replace(/^@/, ""));
 
     refreshOnlineIndicator(link, onlineUser);
   }

@@ -23,6 +23,7 @@
  * @property {number} confighash
  * @property {number} servertime
  * @property {number} timestamp
+ * @property {unknown[]} updates
  */
 
 const bogusWorld = "-some-other-bogus-world-";
@@ -168,6 +169,11 @@ function refreshOnlineIndicator(link, onlineUser) {
   if (!onlineUser) {
     circle.classList.remove("online");
     circle.classList.add("offline");
+    circle.textContent = "";
+    circle.removeAttribute("href");
+    circle.removeAttribute("title");
+    circle.removeAttribute("target");
+    circle.removeAttribute("rel");
     circle.removeEventListener("click", onClick);
     return;
   }
@@ -183,12 +189,12 @@ function refreshOnlineIndicator(link, onlineUser) {
   }
   
   circle.classList.remove("offline");
-  circle.setAttribute("href", url.toString());
-  circle.setAttribute("target", "_blank");
-  circle.setAttribute("rel", "noopener noreferrer");
   circle.classList.add("online");
   circle.textContent = worldIcons[onlineUser.world] || worldIcons[bogusWorld];
+  circle.setAttribute("href", url.toString());
   circle.setAttribute("title", `Online - ${worldNames[onlineUser.world] || worldNames[bogusWorld]}`);
+  circle.setAttribute("target", "_blank");
+  circle.setAttribute("rel", "noopener noreferrer");
   circle.addEventListener("click", onClick);
 }
 
@@ -206,7 +212,7 @@ async function refreshOnlineIndicators() {
       continue;
     }
 
-    const onlineUser = onlineUsers.find(user => user.name === link.textContent?.replace(/^@/, ""));
+    const onlineUser = onlineUsers.find(user => user.name === link.textContent);
 
     refreshOnlineIndicator(link, onlineUser);
   }

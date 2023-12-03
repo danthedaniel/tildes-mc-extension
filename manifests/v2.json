@@ -1,0 +1,28 @@
+{
+  "manifest_version": 2,
+  "name": "Tildes MC Status Indicators",
+  "version": "1.2.1",
+  "description": "Appends DynMap links to usernames on tildes.net",
+  "icons": {
+    "32": "icons/icon32.png",
+    "64": "icons/icon64.png",
+    "300": "icons/icon300.png"
+  },
+  "permissions": [
+    "https://tildes.net/*",
+    "https://tildes.nore.gg/standalone/MySQL_update.php"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://tildes.net/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ]
+    }
+  ]
+}

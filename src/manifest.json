@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tildes MC Status Indicators",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Appends DynMap links to usernames on tildes.net",
   "icons": {
     "32": "icons/icon32.png",

@@ -185,7 +185,7 @@ function refreshOnlineIndicator(link, onlineUser) {
     url.searchParams.append("mapname", onlineUser.world === "world" ? "surface" : "flat");
     url.searchParams.append("zoom", "6");
     url.searchParams.append("x", onlineUser.x.toString());
-    url.searchParams.append("y", "64");
+    url.searchParams.append("y", onlineUser.y.toString());
     url.searchParams.append("z", onlineUser.z.toString());
   }
   

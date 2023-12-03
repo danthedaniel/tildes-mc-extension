@@ -56,6 +56,7 @@ async function getAllWorlds() {
   /** @type {Record<string, Pick<Player, "name" | "world" | "x" | "y" | "z">>} */
   const users = {};
 
+  /** @type {Promise<Response>[]} */
   const promises = worlds.map(world => {
     const url = new URL("https://tildes.nore.gg/standalone/MySQL_update.php");
     url.searchParams.append("world", world);

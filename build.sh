@@ -7,6 +7,6 @@ cp ../manifests/v2.json ./manifest.json
 zip -r ../out/extension.xpi *
 
 cp ../manifests/v3.json ./manifest.json
-zip -r ../out/extension.crx *
+zip -r ../out/extension.zip *
 
 rm ./manifest.json

@@ -1,8 +1,14 @@
 // @ts-check
 
+const bogusWorld = "-some-other-bogus-world-";
+
+/**
+ * @typedef {"world" | "world_nether" | "world_the_end" | typeof bogusWorld} WorldName
+ */
+
 /**
  * @typedef {Object} Player
- * @property {string} world
+ * @property {WorldName} world
  * @property {number} armor
  * @property {string} name
  * @property {number} x
@@ -25,8 +31,6 @@
  * @property {number} timestamp
  * @property {unknown[]} updates
  */
-
-const bogusWorld = "-some-other-bogus-world-";
 
 /**
  * @param {number} timestamp
@@ -52,6 +56,8 @@ function getLastFetchedAt() {
  */
 async function getAllWorlds() {
   const timestamp = Date.now();
+
+  /** @type {WorldName[]} */
   const worlds = ["world", "world_nether", "world_the_end"];
   /** @type {Record<string, Pick<Player, "name" | "world" | "x" | "y" | "z">>} */
   const users = {};
@@ -139,9 +145,12 @@ async function onClick(event) {
     return;
   }
 
-  window.open(link.href, "_blank");
+  window.open(link.href, "_blank", "noopener noreferrer");
 }
 
+/**
+ * @type {Record<WorldName, string>}
+ */
 const worldIcons = {
   world: "\u{1F30E}", // Globe with Americas
   world_nether: "\u{1F525}", // Fire
@@ -149,6 +158,9 @@ const worldIcons = {
   [bogusWorld]: "\u{1F310}", // Globe with meridians
 };
 
+/**
+ * @type {Record<WorldName, string>}
+ */
 const worldNames = {
   world: "Overworld",
   world_nether: "Nether",

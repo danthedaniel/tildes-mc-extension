@@ -10,14 +10,8 @@
   },
   "host_permissions": [
     "https://tildes.net/*",
-    "https://tildes.nore.gg/maps/world/live/players.json",
-    "https://tildes.nore.gg/maps/world_nether/live/players.json",
-    "https://tildes.nore.gg/maps/world_the_end/live/players.json"
+    "https://tildes.nore.gg/*"
   ],
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://tildes.nore.gg",
-    "content_scripts": "script-src 'self'; object-src 'self'; connect-src 'self' https://tildes.nore.gg"
-  },
   "content_scripts": [
     {
       "matches": [

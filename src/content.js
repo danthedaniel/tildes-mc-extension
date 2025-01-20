@@ -1,4 +1,5 @@
 // @ts-check
+"use strict";
 
 const bogusWorld = "-some-other-bogus-world-";
 

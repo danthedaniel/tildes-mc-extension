@@ -4,4 +4,4 @@
 
 ![Screenshot](pics/screenshot.png)
 
-Clicking on the globe will show the player's location on the DynMap.
+Clicking on the globe will show the player's location on BlueMap.

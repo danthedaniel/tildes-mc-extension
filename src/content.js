@@ -1,36 +1,26 @@
 // @ts-check
 "use strict";
 
-const bogusWorld = "-some-other-bogus-world-";
+/**
+ * @typedef {"world" | "world_nether" | "world_the_end"} WorldName
+ */
 
 /**
- * @typedef {"world" | "world_nether" | "world_the_end" | typeof bogusWorld} WorldName
+ * @typedef {Object} BlueMapResponse
+ * @property {Player[]} players
  */
 
 /**
  * @typedef {Object} Player
- * @property {WorldName} world
- * @property {number} armor
+ * @property {string} uuid
  * @property {string} name
- * @property {number} x
- * @property {number} y
- * @property {number} z
- * @property {number} health
- * @property {number} sort
- * @property {string} type
- * @property {string} account
+ * @property {boolean} foreign
+ * @property {{ x: number, y: number, z: number }} position
+ * @property {{ pitch: number, yaw: number, roll: number }} rotation
  */
 
 /**
- * @typedef {Object} UpdateResponse
- * @property {number} currentcount
- * @property {boolean} hasStorm
- * @property {Player[]} players
- * @property {boolean} isThundering
- * @property {number} confighash
- * @property {number} servertime
- * @property {number} timestamp
- * @property {unknown[]} updates
+ * @typedef {Player & { world: WorldName }} PlayerWithWorld
  */
 
 /**
@@ -54,44 +44,33 @@ function getLastFetchedAt() {
 
 /**
  * Gets all players in all worlds.
+ * @returns {Promise<PlayerWithWorld[]>}
  */
 async function getAllWorlds() {
   const timestamp = Date.now();
 
   /** @type {WorldName[]} */
   const worlds = ["world", "world_nether", "world_the_end"];
-  /** @type {Record<string, Pick<Player, "name" | "world" | "x" | "y" | "z">>} */
+  /** @type {Record<string, PlayerWithWorld>} */
   const users = {};
 
-  /** @type {Promise<Response>[]} */
+  /** @type {Promise<[WorldName, Promise<Response>]>[]} */
   const promises = worlds.map(world => {
-    const url = new URL("https://tildes.nore.gg/standalone/MySQL_update.php");
-    url.searchParams.append("world", world);
-    url.searchParams.append("ts", timestamp.toString());
+    const url = new URL(`https://tildes.nore.gg/maps/${world}/live/players.json?${timestamp}`);
 
     return Promise.race([
-      fetch(url),
+      [world, fetch(url)],
       new Promise((_, reject) => setTimeout(reject, 1000 * 5)),
     ]);
   });
 
-  for (const response of await Promise.all(promises)) {
-    /** @type {UpdateResponse} */
-    const data = await response.json();
-    const tildesUsers =
-        data
-            .players
-            .filter(player => player.name.startsWith("<span style=\"color:#0099cc\">"))
-            .map(player => ({
-              name: player.name?.match(/<span style="color:#0099cc">(.*)<\/span>/)?.[1] ?? "-bogus-user-",
-              world: player.world,
-              x: player.x,
-              y: player.y,
-              z: player.z,
-            }));
+  for (const [world, response] of await Promise.all(promises)) {
+    /** @type {BlueMapResponse} */
+    const data = await (await response).json();
+    const worldUsers = data.players.filter(player => !player.foreign).map(player => ({ ...player, world }));
     
-    for (const user of tildesUsers) {
-      if (users[user.name] && user.world === bogusWorld) {
+    for (const user of worldUsers) {
+      if (typeof users[user.name] !== "undefined") {
         continue;
       }
 
@@ -156,7 +135,6 @@ const worldIcons = {
   world: "\u{1F30E}", // Globe with Americas
   world_nether: "\u{1F525}", // Fire
   world_the_end: "\u{1F30C}", // Milky Way
-  [bogusWorld]: "\u{1F310}", // Globe with meridians
 };
 
 /**
@@ -166,13 +144,12 @@ const worldNames = {
   world: "Overworld",
   world_nether: "Nether",
   world_the_end: "End",
-  [bogusWorld]: "Unknown",
 };
 
 /**
  * Refreshes the online indicator for a user.
  * @param {HTMLAnchorElement} link
- * @param {Pick<Player, "name" | "world" | "x" | "y" | "z"> | undefined} onlineUser
+ * @param {PlayerWithWorld | undefined} onlineUser
  */
 function refreshOnlineIndicator(link, onlineUser) {
   const circle = link.nextElementSibling;
@@ -193,20 +170,13 @@ function refreshOnlineIndicator(link, onlineUser) {
   }
 
   const url = new URL("https://tildes.nore.gg/");
-  if (onlineUser.world !== bogusWorld) {
-    url.searchParams.append("worldname", onlineUser.world);
-    url.searchParams.append("mapname", onlineUser.world === "world" ? "surface" : "flat");
-    url.searchParams.append("zoom", "6");
-    url.searchParams.append("x", onlineUser.x.toString());
-    url.searchParams.append("y", onlineUser.y.toString());
-    url.searchParams.append("z", onlineUser.z.toString());
-  }
+  url.hash = `#${onlineUser.world}:${onlineUser.position.x}:${onlineUser.position.y}:${onlineUser.position.z}:128:0:0:0:0:perspective`;
   
   circle.classList.remove("offline");
   circle.classList.add("online");
-  circle.textContent = worldIcons[onlineUser.world] || worldIcons[bogusWorld];
+  circle.textContent = worldIcons[onlineUser.world];
   circle.setAttribute("href", url.toString());
-  circle.setAttribute("title", `Online - ${worldNames[onlineUser.world] || worldNames[bogusWorld]}`);
+  circle.setAttribute("title", `Online - ${worldNames[onlineUser.world]}`);
   circle.setAttribute("target", "_blank");
   circle.setAttribute("rel", "noopener noreferrer");
   circle.addEventListener("click", onClick);

@@ -54,19 +54,21 @@ async function getAllWorlds() {
   /** @type {Record<string, PlayerWithWorld>} */
   const users = {};
 
-  /** @type {Promise<[WorldName, Promise<Response>]>[]} */
-  const promises = worlds.map(world => {
+  const promises = worlds.map(async world => {
     const url = new URL(`https://tildes.nore.gg/maps/${world}/live/players.json?${timestamp}`);
 
-    return Promise.race([
-      [world, fetch(url)],
+    /** @type {Response} */
+    const response = await Promise.race([
+      fetch(url),
       new Promise((_, reject) => setTimeout(reject, 1000 * 5)),
     ]);
+
+    return /** @type {[WorldName, Response]} */ ([world, response]);
   });
 
   for (const [world, response] of await Promise.all(promises)) {
     /** @type {BlueMapResponse} */
-    const data = await (await response).json();
+    const data = await response.json();
     const worldUsers = data.players.filter(player => !player.foreign).map(player => ({ ...player, world }));
     
     for (const user of worldUsers) {
